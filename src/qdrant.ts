@@ -1,5 +1,6 @@
 import { QdrantClient } from "@qdrant/js-client-rest";
 import { getEmbedding } from "./embeddings";
+import { randomUUID } from "crypto";
 
 const client = new QdrantClient({ url: "http://localhost:6333" });
 
@@ -44,17 +45,23 @@ interface Document {
 }
 
 export async function addDocument(doc: Document, embedding: number[]) {
+  const point = {
+    id: randomUUID(),
+    vector: embedding,
+    payload: {
+      text: doc.text,
+      ...doc.metadata,
+    },
+  };
+
+  console.log("Adding point:", {
+    id: point.id,
+    vectorLength: point.vector.length,
+    payloadKeys: Object.keys(point.payload),
+  });
+
   await client.upsert(COLLECTION_NAME, {
-    points: [
-      {
-        id: doc.id,
-        vector: embedding,
-        payload: {
-          text: doc.text,
-          ...doc.metadata,
-        },
-      },
-    ],
+    points: [point],
   });
 }
 
