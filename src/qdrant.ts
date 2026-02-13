@@ -3,7 +3,12 @@ import { getEmbedding } from "./embeddings";
 import { randomUUID } from "crypto";
 
 const qdrantUrl = process.env.QDRANT_URL || "http://localhost:6333";
-const client = new QdrantClient({ url: qdrantUrl });
+const qdrantApiKey = process.env.QDRANT_API_KEY;
+
+const client = new QdrantClient({
+  url: qdrantUrl,
+  apiKey: qdrantApiKey,
+});
 
 const COLLECTION_NAME = "knowledge_base";
 
