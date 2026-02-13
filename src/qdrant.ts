@@ -2,7 +2,8 @@ import { QdrantClient } from "@qdrant/js-client-rest";
 import { getEmbedding } from "./embeddings";
 import { randomUUID } from "crypto";
 
-const client = new QdrantClient({ url: "http://localhost:6333" });
+const qdrantUrl = process.env.QDRANT_URL || "http://localhost:6333";
+const client = new QdrantClient({ url: qdrantUrl });
 
 const COLLECTION_NAME = "knowledge_base";
 
