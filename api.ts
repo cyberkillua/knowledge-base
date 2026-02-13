@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { cors } from "hono/cors";
 import { getEmbedding } from "./src/embeddings";
 import { client, COLLECTION_NAME } from "./src/qdrant";
 import { randomUUID } from "crypto";
@@ -10,6 +11,8 @@ import path from "path";
 import fs from "fs/promises";
 
 const app = new Hono();
+
+app.use("/*", cors());
 
 // Health check
 app.get("/health", (c) => {
