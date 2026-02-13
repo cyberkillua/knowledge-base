@@ -1,20 +1,22 @@
-import { CohereClient } from "cohere-ai";
-
-const cohere = new CohereClient({
-  token: process.env.COHERE_API_KEY,
-});
+const JINA_API_KEY = process.env.JINA_API_KEY;
 
 export async function getEmbedding(text: string): Promise<number[]> {
   try {
-    const response = await cohere.embed({
-      texts: [text],
-      model: "embed-english-v3.0",
-      inputType: "search_document",
+    const response = await fetch("https://api.jina.ai/v1/embeddings", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${JINA_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: "jina-embeddings-v3",
+        input: [text],
+      }),
     });
 
-    const embeddings = response.embeddings as number[][];
-    console.log("Cohere response:", embeddings[0]?.length);
-    return embeddings[0];
+    const data = await response.json();
+    console.log("Jina response:", data.data?.[0]?.embedding?.length);
+    return data.data[0].embedding;
   } catch (error) {
     console.error("Error getting embedding:", error);
     return [];
