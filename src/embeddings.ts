@@ -15,6 +15,11 @@ export async function getEmbedding(text: string): Promise<number[]> {
     });
 
     const data = await response.json();
+
+    if (!data.data?.[0]?.embedding) {
+      console.error("Jina error:", JSON.stringify(data));
+      return [];
+    }
     console.log("Jina response:", data.data?.[0]?.embedding?.length);
     return data.data[0].embedding;
   } catch (error) {

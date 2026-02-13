@@ -124,9 +124,19 @@ app.post("/index/file", async (c) => {
     // Chunk the text
     const chunks = chunkText(text);
 
-    // Index each chunk
+    // Add delay helper at top
+    const delay = (ms: number) =>
+      new Promise((resolve) => setTimeout(resolve, ms));
+
+    // In the indexing loop:
     for (const chunk of chunks) {
       const embedding = await getEmbedding(chunk.text);
+
+      // Skip if embedding failed
+      if (embedding.length === 0) {
+        console.log(`Skipping chunk ${chunk.index} - embedding failed`);
+        continue;
+      }
 
       await addDocument(
         {
@@ -140,6 +150,9 @@ app.post("/index/file", async (c) => {
         },
         embedding,
       );
+
+      // Rate limit: 100ms between requests
+      await delay(100);
     }
 
     await fs.unlink(tempPath);
