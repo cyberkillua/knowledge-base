@@ -7,6 +7,8 @@ import { initializeCollection, addDocument } from "./src/qdrant";
 import { extractUrl } from "./src/extractors/url";
 import { extractMarkdown } from "./src/extractors/markdown";
 import { extractPdf } from "./src/extractors/pdf";
+import { chunkText } from "./src/chunker";
+
 import path from "path";
 import fs from "fs/promises";
 
@@ -85,6 +87,7 @@ app.post("/index/url", async (c) => {
 });
 
 // Index file (markdown or PDF)
+
 app.post("/index/file", async (c) => {
   const formData = await c.req.formData();
   const file = formData.get("file") as File;
@@ -101,12 +104,10 @@ app.post("/index/file", async (c) => {
   }
 
   try {
-    // Save temp file
     const tempPath = `/tmp/${filename}`;
     const buffer = await file.arrayBuffer();
     await fs.writeFile(tempPath, Buffer.from(buffer));
 
-    // Extract based on type
     let text: string;
     let metadata: any;
 
@@ -120,23 +121,33 @@ app.post("/index/file", async (c) => {
       metadata = result.metadata;
     }
 
-    // Generate embedding and store
-    const embedding = await getEmbedding(text);
-    await addDocument(
-      {
-        id: randomUUID(),
-        text,
-        metadata,
-      },
-      embedding,
-    );
+    // Chunk the text
+    const chunks = chunkText(text);
 
-    // Cleanup temp file
+    // Index each chunk
+    for (const chunk of chunks) {
+      const embedding = await getEmbedding(chunk.text);
+
+      await addDocument(
+        {
+          id: randomUUID(),
+          text: chunk.text,
+          metadata: {
+            ...metadata,
+            chunkIndex: chunk.index,
+            totalChunks: chunks.length,
+          },
+        },
+        embedding,
+      );
+    }
+
     await fs.unlink(tempPath);
 
     return c.json({
       success: true,
       filename,
+      chunks: chunks.length,
       source: ext === ".md" ? "markdown" : "pdf",
     });
   } catch (error) {
